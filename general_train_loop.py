@@ -47,6 +47,7 @@ class TrainLoop(ConfigScript):
     
     def unroll(self, metaconfig):
         print('using config:', asdict(self))
+        print('using device:', metaconfig.device)
         # save config as json or pickle or both
         if not os.path.exists(self.save_checkpoint_dir):
             os.makedirs(self.save_checkpoint_dir)

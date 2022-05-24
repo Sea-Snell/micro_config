@@ -18,13 +18,15 @@ The config framework is defined in `micro_config.py`.
 The rest of the repo provides a demo for how one might actually want to use `micro_config.py` in a deep learning project. Specifically, I implement transformer language model training on wikitext.
 
 To run the demo:
-
-1. navegate to the root directory
+1. navigate to the root directory
 2. `export PYTHONPATH="$PWD"`
 3. `cd scripts`
 4. `python train_lm.py`
 
-Optionally you can define commandline arguments to `train_lm.py` like: `python train_lm.py epochs=1 bsize=16 model.transformer_config.hidden_dim=256`
+Optionally you can define commandline arguments to `train_lm.py` like:
+``` shell
+python train_lm.py epochs=1 bsize=16 model.transformer_config.hidden_dim=256
+```
 
 overview of demo project code:
 * `scripts/train_lm.py` defines the training configuration and script execution.
@@ -36,7 +38,7 @@ overview of demo project code:
 
 *Most demo code in this section is adopted from the demo project provided in the repo.*
 
-## Python dataclasses provide a more natural and flexible config definition interface than .yaml files.
+## Python dataclasses provide a more natural and flexible config definition interface than `.yaml` files.
 
 * All config schema should be defined as an instance of `ConfigScript` or `ConfigScriptModel` and include a `@dataclass` decorator
 * ConfigScripts firstly define a parameter schema and default config values.
@@ -218,7 +220,7 @@ The dataset object configured by `train_dataset` will only be loaded once in the
 ## A method for parsing commandline args is provided.
 
 * `parse_args(config)` parses the command line arguments into a dictionary
-* `deep_replace(config, **kwargs)` implements a nested version of the standard dataclasses replace method
+* `deep_replace(config, **kwargs)` implements a nested version of the standard `dataclasses.replace` function
 
 ``` python
 
