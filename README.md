@@ -19,9 +19,10 @@ The rest of the repo provides a demo for how one might actually want to use `mic
 
 To run the demo:
 1. navigate to the root directory
-2. `export PYTHONPATH="$PWD"`
-3. `cd scripts`
-4. `python train_lm.py`
+2. `pip install -r requirements.txt`
+3. `export PYTHONPATH="$PWD"`
+4. `cd scripts`
+5. `python train_lm.py`
 
 Optionally you can define commandline arguments to `train_lm.py` like:
 ``` shell
