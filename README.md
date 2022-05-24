@@ -128,7 +128,7 @@ if __name__ == "__main__":
 2. `strict_load`: force `strict_load` when loading model parameters.
 3. `device`: specify model device. If None, use default device provided in the metaconfig.
 
-## Configs and scripts are unified, a config is to a script as a script is to a config.
+## Configs and scripts are unified: a config is to a script as a script is to a config.
 * `unroll(self, metaconfig)` can not only be used to load objects, but also to define script logic.
 
 For example, let's define a simple configurable training loop:
