@@ -15,7 +15,7 @@ Place `micro_config.py` at the root of your project.
 
 The config framework is defined in `micro_config.py`.
 
-The rest of the repo provides a demo for how one might actually want to use `micro_config.py` in a deep learning project. Specifically, I implement transformer language model training on wikitext.
+The rest of the repo provides a demo for how one might actually want to use `micro_config.py` in a deep learning project. Specifically, I implement transformer language model training on wikitext in pytorch.
 
 To run the demo:
 1. navigate to the root directory
@@ -56,8 +56,8 @@ class WikiDataConfig(ConfigScript):
     max_len: int=256
 ```
 
-## ConfigScripts load associated objects or functions.
-* To do this, all `ConfigScript`'s implement `unroll(self, metaconfig)`.
+## `ConfigScript`s load associated objects or functions.
+* To do this, all `ConfigScript`s implement `unroll(self, metaconfig)`.
 * The `metaconfig` parameter is another dataclass which specifies configs for the config framework.
 
 For example, loading the dataset from the config:
@@ -129,7 +129,7 @@ if __name__ == "__main__":
 3. `device`: specify model device. If None, use default device provided in the metaconfig.
 
 ## Configs and scripts are unified, a config is to a script as a script is to a config.
-* `unroll(self, metaconfig)` can not only be used to load objects but also to define script logic.
+* `unroll(self, metaconfig)` can not only be used to load objects, but also to define script logic.
 
 For example, let's define a simple configurable training loop:
 ``` python
@@ -178,7 +178,7 @@ class TrainLoop(ConfigScript):
 
 * If the same config object is referenced multiple times in a config hierarchy, the object's `unroll(self, metaconfig)` method will only be called once and its output cached, subsequent calls will return the cached output.
 
-For example, if `train_dataset` is referenced twice in `train_config_script`:
+For example, `train_dataset` is referenced twice in `train_config_script`:
 ``` python
 import torch
 
@@ -216,7 +216,7 @@ if __name__ == "__main__":
     train_config_script.unroll(metaconfig)
 ```
 
-The dataset object configured by `train_dataset` will only be loaded once in the above hiararchy, even though both `LMModelConfig` and `TrainLoop` take it as input.
+The dataset object configured by `train_dataset` will only be loaded once in the above hiararchy, even though both `LMModelConfig` and `TrainLoop` take it in as input.
 
 ## A method for parsing commandline args is provided.
 
