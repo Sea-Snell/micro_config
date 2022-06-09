@@ -7,18 +7,19 @@ import torch
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-# convert reletive path to absolute path
-def convert_path(path):
-    if path is None:
-        return None
-    return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
-
 # defines parameters for the configuration process.
 @dataclass
 class MetaConfig:
+    project_root: str=''
     verbose: bool=True
     device: Union[torch.device, str]='cpu'
     unrolled: Optional[Dict[int, Any]]=None
+
+    # convert reletive path to absolute path
+    def convert_path(self, path):
+        if path is None:
+            return None
+        return os.path.join(self.project_root, path)
 
 # standard config script super class.
 # To keep config hierarchy references consistent, caches output of previously unrolled config_scripts by memory id.
@@ -32,12 +33,15 @@ class ConfigScript(ABC):
             if metaconfig.unrolled is None:
                 metaconfig.unrolled = {}
             if id(self) in metaconfig.unrolled:
-                print(f'fetching {self.__class__.__name__} from cache: {id(self)}')
+                if metaconfig.verbose:
+                    print(f'fetching {self.__class__.__name__} from cache: {id(self)}')
                 return metaconfig.unrolled[id(self)]
-            print(f'unrolling {self.__class__.__name__}: {id(self)}')
+            if metaconfig.verbose:
+                print(f'unrolling {self.__class__.__name__}: {id(self)}')
             result = unroll(self, metaconfig)
             metaconfig.unrolled[id(self)] = result
-            print(f'unrolled {self.__class__.__name__} and cached: {id(self)}')
+            if metaconfig.verbose:
+                print(f'unrolled {self.__class__.__name__} and cached: {id(self)}')
             return result
         return new_unroll
     
@@ -66,19 +70,22 @@ class ConfigScriptModel(ConfigScript):
             if metaconfig.unrolled is None:
                 metaconfig.unrolled = {}
             if id(self) in metaconfig.unrolled:
-                print(f'fetching {self.__class__.__name__} from cache: {id(self)}')
+                if metaconfig.verbose:
+                    print(f'fetching {self.__class__.__name__} from cache: {id(self)}')
                 return metaconfig.unrolled[id(self)]
-            print(f'unrolling {self.__class__.__name__}: {id(self)}')
+            if metaconfig.verbose:
+                print(f'unrolling {self.__class__.__name__}: {id(self)}')
             model = unroll(self, metaconfig)
             model = model.to(self.device)
             if self.checkpoint_path is not None:
                 if metaconfig.verbose:
-                    print('loading state dict from: %s' % convert_path(self.checkpoint_path))
-                model.load_state_dict(torch.load(convert_path(self.checkpoint_path), map_location='cpu'), strict=self.strict_load)
+                    print('loading state dict from: %s' % metaconfig.convert_path(self.checkpoint_path))
+                model.load_state_dict(torch.load(metaconfig.convert_path(self.checkpoint_path), map_location='cpu'), strict=self.strict_load)
                 if metaconfig.verbose:
                     print('loaded.')
             metaconfig.unrolled[id(self)] = model
-            print(f'unrolled and {self.__class__.__name__} cached: {id(self)}')
+            if metaconfig.verbose:
+                print(f'unrolled and {self.__class__.__name__} cached: {id(self)}')
             return model
         return new_unroll
 

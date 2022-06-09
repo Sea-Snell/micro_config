@@ -1,5 +1,5 @@
 from micro_config import MetaConfig, parse_args, deep_replace
-from base_configs import AdamWConfig, LMModelConfig, TransformerConfig, WikiDataConfig
+from base_configs import AdamWConfig, LMModelConfig, TransformerConfig, WikiDataConfig, project_root
 from general_train_loop import TrainLoop
 import torch
 
@@ -40,7 +40,6 @@ train_config_script = TrainLoop(
     log_every=256,
     save_every=16384,
     save_checkpoint_dir='outputs/lm_checkpoints',
-    optim_state_path=None,
     max_checkpoints=1,
 )
 
@@ -48,7 +47,7 @@ if __name__ == "__main__":
     # metaconfig defines parameters for the configuration process
     # it could also include default parameters that you want to share broadly across objects
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    metaconfig = MetaConfig(verbose=True, device=device)
+    metaconfig = MetaConfig(project_root=project_root, verbose=True, device=device)
     # parse_args parses the command line arguments into a dictionary
     # deep_replace implements a nested version of the standard dataclasses replace method
     train_config_script = deep_replace(train_config_script, **parse_args())

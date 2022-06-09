@@ -7,9 +7,15 @@ I hope this approach to configurations can make your life easier, but if it does
 
 # Installation
 
-Place `micro_config.py` at the root of your project.
+pip install:
 
-*I will integrate a more formal pypi install, once I iterate a bit more on the framework.*
+``` shell
+pip install micro-config
+```
+
+or install from source:
+
+> Place `micro_config.py` at the root of your project.
 
 # Repo Guide
 
@@ -63,9 +69,10 @@ class WikiDataConfig(ConfigScript):
 For example, loading the dataset from the config:
 ``` python
 from dataclasses import dataclass, adsict
-from micro_config import ConfigScript, MetaConfig, convert_path
+from micro_config import ConfigScript, MetaConfig
 from src.data import WikitextDataset
 import torch
+import os
 
 # data config
 @dataclass
@@ -74,10 +81,12 @@ class WikiDataConfig(ConfigScript):
     max_len: int=256
 
     def unroll(self, metaconfig):
-        return WikitextDataset(convert_path(self.f_path), self.max_len)
+        # metaconfig.convert_path converts paths reletive to metaconfig.project_root into absolute paths
+        return WikitextDataset(metaconfig.convert_path(self.f_path), self.max_len)
 
 if __name__ == "__main__":
-    metaconfig = MetaConfig(verbose=True, device='cpu')
+    metaconfig = MetaConfig(project_root=os.path.dirname(__file__), 
+                            verbose=True, device='cpu')
     
     data_config = WikiDataConfig(max_len=512)
     data = data_config.unroll(metaconfig)
@@ -92,6 +101,7 @@ For example, the LM model config below defines `ConfigScript`s for both a datase
 from micro_config import ModelConfigScript
 from dataclasses import field
 from src.lm import LMModel
+import os
 
 # model config
 @dataclass
@@ -105,6 +115,9 @@ class LMModelConfig(ModelConfigScript):
         return LMModel(dataset, transformer_config, self.device)
 
 if __name__ == "__main__":
+    metaconfig = MetaConfig(project_root=os.path.dirname(__file__), 
+                            verbose=True, device='cpu')
+
     model_config = LMModelConfig(
         checkpoint_path=None, 
         strict_load=True, 
@@ -120,7 +133,7 @@ if __name__ == "__main__":
             dropout=0.1
         )
     )
-    model = model_config.unroll()
+    model = model_config.unroll(metaconfig)
 ```
 
 `ModelConfigScript`, as used above, is a subclass of `ConfigScript` which provides some default functionality for loading a pytorch module returned by unroll. It provides default parameters for:
@@ -143,12 +156,6 @@ class TrainLoop(ConfigScript):
     optim: Any=None
     epochs: int=10
     bsize: int=32
-    save_checkpoint_dir: str=''
-
-    # implement __post_init__ to handle any final edits to config parameters
-    def __post_init__(self):
-        # convert_path converts paths reletive to project root into absolute paths
-        self.save_checkpoint_dir = convert_path(self.save_checkpoint_dir)
     
     def unroll(self, metaconfig):
         print('using config:', asdict(self))
@@ -181,6 +188,7 @@ class TrainLoop(ConfigScript):
 For example, `train_dataset` is referenced twice in `train_config_script`:
 ``` python
 import torch
+import os
 
 train_dataset = WikiDataConfig(f_path='data/wikitext-2-raw/wiki.train.raw', max_len=256)
 eval_dataset = WikiDataConfig(f_path='data/wikitext-2-raw/wiki.valid.raw', max_len=256)
@@ -207,11 +215,11 @@ train_config_script = TrainLoop(
     optim=AdamWConfig(lr=1e-4, weight_decay=0.01), 
     epochs=10, 
     bsize=16, 
-    save_checkpoint_dir='outputs/lm_checkpoints',
 )
 
 if __name__ == "__main__":
-    metaconfig = MetaConfig(verbose=True, device='cpu')
+    metaconfig = MetaConfig(project_root=os.path.dirname(__file__), 
+                            verbose=True, device='cpu')
     # run the script
     train_config_script.unroll(metaconfig)
 ```
@@ -226,9 +234,11 @@ The dataset object configured by `train_dataset` will only be loaded once in the
 ``` python
 
 from micro_config import parse_args, deep_replace
+import os
 
 if __name__ == "__main__":
-    metaconfig = MetaConfig(verbose=True, device='cpu')
+    metaconfig = MetaConfig(project_root=os.path.dirname(__file__), 
+                            verbose=True, device='cpu')
     train_config_script = deep_replace(train_config_script, **parse_args())
     # run the script
     train_config_script.unroll(metaconfig)

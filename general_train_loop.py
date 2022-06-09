@@ -5,7 +5,7 @@ from src.utils import combine_logs
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 import wandb
-from micro_config import  ConfigScript, convert_path
+from micro_config import  ConfigScript
 from collections import deque
 import os
 import json
@@ -30,14 +30,7 @@ class TrainLoop(ConfigScript):
     log_every: int=1
     save_every: Optional[int]=None
     save_checkpoint_dir: str=''
-    optim_state_path: Optional[str]=None
     max_checkpoints: int=1
-
-    # implement __post_init__ to handle any final edits to config parameters
-    def __post_init__(self):
-        # convert_path converts paths reletive to project root into absolute paths
-        self.save_checkpoint_dir = convert_path(self.save_checkpoint_dir)
-        self.optim_state_path = convert_path(self.optim_state_path)
 
     def out_log(self, logs):
         print(logs)
@@ -48,12 +41,14 @@ class TrainLoop(ConfigScript):
     def unroll(self, metaconfig):
         print('using config:', asdict(self))
         print('using device:', metaconfig.device)
+        # metaconfig.convert_path converts paths reletive to metaconfig.project_root into absolute paths
+        save_checkpoint_dir = metaconfig.convert_path(self.save_checkpoint_dir)
         # save config as json or pickle or both
-        if not os.path.exists(self.save_checkpoint_dir):
-            os.makedirs(self.save_checkpoint_dir)
-        with open(os.path.join(self.save_checkpoint_dir, 'config.json'), 'w') as f:
+        if not os.path.exists(save_checkpoint_dir):
+            os.makedirs(save_checkpoint_dir)
+        with open(os.path.join(save_checkpoint_dir, 'config.json'), 'w') as f:
             json.dump(asdict(self), f)
-        with open(os.path.join(self.save_checkpoint_dir, 'config.pkl'), 'wb') as f:
+        with open(os.path.join(save_checkpoint_dir, 'config.pkl'), 'wb') as f:
             pkl.dump(self, f)
         if self.use_wandb:
             wandb.init(project=self.wandb_project, config=asdict(self))
@@ -93,23 +88,23 @@ class TrainLoop(ConfigScript):
                     eval_logs_accum = []
                     if out_log['val']['loss'] < best_loss:
                         print('new best eval loss! Saving ...')
-                        if not os.path.exists(self.save_checkpoint_dir):
-                            os.makedirs(self.save_checkpoint_dir)
+                        if not os.path.exists(save_checkpoint_dir):
+                            os.makedirs(save_checkpoint_dir)
                         torch.save(model.state_dict(),
-                                    os.path.join(self.save_checkpoint_dir, 'model.pkl'))
-                        torch.save(optim.state_dict(), os.path.join(self.save_checkpoint_dir, 'optim.pkl'))
+                                    os.path.join(save_checkpoint_dir, 'model.pkl'))
+                        torch.save(optim.state_dict(), os.path.join(save_checkpoint_dir, 'optim.pkl'))
                         print('saved.')
                         best_loss = out_log['val']['loss']
                     model.train()
                 if self.save_every is not None and (step + 1) % self.save_every == 0:
                     print('saving checkpoint...')
-                    if not os.path.exists(self.save_checkpoint_dir):
-                        os.makedirs(self.save_checkpoint_dir)
+                    if not os.path.exists(save_checkpoint_dir):
+                        os.makedirs(save_checkpoint_dir)
                     if (self.max_checkpoints is not None) and (len(saved_checkpoints) >= self.max_checkpoints):
                         os.system('rm -rf %s' % (saved_checkpoints.popleft()))
                     torch.save(model.state_dict(),
-                                os.path.join(self.save_checkpoint_dir, 'model_%d.pkl' % (step)))
-                    saved_checkpoints.append(os.path.join(self.save_checkpoint_dir, 'model_%d.pkl' % (step)))
+                                os.path.join(save_checkpoint_dir, 'model_%d.pkl' % (step)))
+                    saved_checkpoints.append(os.path.join(save_checkpoint_dir, 'model_%d.pkl' % (step)))
                     print('saved.')
                 step += 1
                 if self.max_steps is not None and step >= self.max_steps:

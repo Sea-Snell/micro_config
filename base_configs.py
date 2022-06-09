@@ -1,8 +1,11 @@
 from dataclasses import dataclass, field, asdict
-from micro_config import ConfigScript, ConfigScriptModel, convert_path
+from micro_config import ConfigScript, ConfigScriptModel
 from src.data import WikitextDataset
 from src.lm import LMModel
 import torch
+import os
+
+project_root = os.path.dirname(__file__)
 
 # configs define a parameter schema, defaults, and a method of loading the object from the config
 
@@ -13,7 +16,7 @@ class WikiDataConfig(ConfigScript):
     max_len: int=256
 
     def unroll(self, metaconfig):
-        return WikitextDataset(convert_path(self.f_path), self.max_len)
+        return WikitextDataset(metaconfig.convert_path(self.f_path), self.max_len)
 
 # model config
 @dataclass
