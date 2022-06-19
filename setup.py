@@ -4,7 +4,7 @@ long_description = open('README.md').read()
 
 setup(
     name='micro_config',
-    version='0.1.1',
+    version='0.1.2', 
     license='MIT',
     author="Charlie Snell",
     author_email='csnell22@berkeley.edu',
@@ -14,9 +14,7 @@ setup(
     py_modules=["micro_config"],
     url='https://github.com/Sea-Snell/micro_config',
     keywords='configs configuration dataclasses deeplearning hierarchy hierarchical',
-    install_requires=[
-          'torch',
-      ],
+    install_requires=[], 
     python_requires='>=3',
     classifiers=[
         'Development Status :: 3 - Alpha', 

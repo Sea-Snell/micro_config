@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 import wandb
 from micro_config import  ConfigScript
+from base_configs import ConfigScriptModel
 from collections import deque
 import os
 import json
@@ -14,12 +15,12 @@ import pickle as pkl
 # scripts and configs are unified. unroll() defines the scipt.
 @dataclass
 class TrainLoop(ConfigScript):
-    use_wandb: bool=False
-    wandb_project: str=''
-    train_dataset: Any=None
-    eval_dataset: Any=None
-    model: Any=None
-    optim: Any=None
+    use_wandb: bool
+    wandb_project: str
+    train_dataset: ConfigScript
+    eval_dataset: ConfigScript
+    model: ConfigScriptModel
+    optim: ConfigScript
     epochs: int=10
     max_steps: Optional[int]=None
     n_dloader_workers: int=0
@@ -40,7 +41,7 @@ class TrainLoop(ConfigScript):
     
     def unroll(self, metaconfig):
         print('using config:', asdict(self))
-        print('using device:', metaconfig.device)
+        print('using device:', self.model.device)
         # metaconfig.convert_path converts paths reletive to metaconfig.project_root into absolute paths
         save_checkpoint_dir = metaconfig.convert_path(self.save_checkpoint_dir)
         # save config as json or pickle or both
@@ -52,7 +53,7 @@ class TrainLoop(ConfigScript):
             pkl.dump(self, f)
         if self.use_wandb:
             wandb.init(project=self.wandb_project, config=asdict(self))
-        device = metaconfig.device
+        device = self.model.device
         train_dataset = self.train_dataset.unroll(metaconfig)
         eval_dataset = self.eval_dataset.unroll(metaconfig)
         model = self.model.unroll(metaconfig)

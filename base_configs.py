@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field, asdict
-from micro_config import ConfigScript, ConfigScriptModel
+from typing import Optional, Union
+from micro_config import ConfigScript
 from src.data import WikitextDataset
 from src.lm import LMModel
 import torch
@@ -8,6 +9,43 @@ import os
 project_root = os.path.dirname(__file__)
 
 # configs define a parameter schema, defaults, and a method of loading the object from the config
+
+# implements some default functionality for loading model checkpoints with the config_script.
+@dataclass
+class ConfigScriptModel(ConfigScript):
+    checkpoint_path: Optional[str]
+    strict_load: bool
+    device: Union[torch.device, str]
+
+    # You can always override self.meta_unroll to modify lower-level implementation details.
+    def meta_unroll(unroll):
+        def new_unroll(self, metaconfig):
+            # load model in from cache
+            if metaconfig.unrolled is None:
+                metaconfig.unrolled = {}
+            if id(self) in metaconfig.unrolled:
+                if metaconfig.verbose:
+                    print(f'fetching {self.__class__.__name__} from cache: {id(self)}')
+                return metaconfig.unrolled[id(self)]
+            if metaconfig.verbose:
+                print(f'unrolling {self.__class__.__name__}: {id(self)}')
+            
+            # load model from self.checkpoint_path and place on self.device
+            model = unroll(self, metaconfig)
+            model = model.to(self.device)
+            if self.checkpoint_path is not None:
+                if metaconfig.verbose:
+                    print('loading state dict from: %s' % metaconfig.convert_path(self.checkpoint_path))
+                model.load_state_dict(torch.load(metaconfig.convert_path(self.checkpoint_path), map_location='cpu'), strict=self.strict_load)
+                if metaconfig.verbose:
+                    print('loaded.')
+            
+            # save model to cache and return
+            metaconfig.unrolled[id(self)] = model
+            if metaconfig.verbose:
+                print(f'unrolled and {self.__class__.__name__} cached: {id(self)}')
+            return model
+        return new_unroll
 
 # data config
 @dataclass

@@ -2,8 +2,7 @@ from __future__ import annotations
 from copy import deepcopy
 import os
 import sys
-from typing import Any, Dict, Optional, Union
-import torch
+from typing import Any, Dict, Optional
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -12,7 +11,6 @@ from dataclasses import dataclass
 class MetaConfig:
     project_root: str=''
     verbose: bool=True
-    device: Union[torch.device, str]='cpu'
     unrolled: Optional[Dict[int, Any]]=None
 
     # convert reletive path to absolute path
@@ -49,45 +47,29 @@ class ConfigScript(ABC):
     def unroll(self, metaconfig: MetaConfig) -> Any:
         pass
 
+# if you would not like to cache the result of unroll, subclass ConfigScriptNoCache instead.
+@dataclass
+class ConfigScriptNoCache(ConfigScript):
+    def meta_unroll(unroll):
+        def new_unroll(self, metaconfig: MetaConfig):
+            if metaconfig.verbose:
+                print(f'unrolling {self.__class__.__name__}: {id(self)}')
+            result = unroll(self, metaconfig)
+            if metaconfig.verbose:
+                print(f'unrolled {self.__class__.__name__}: {id(self)}')
+            return result
+        return new_unroll
+    
+    @abstractmethod
+    def unroll(self, metaconfig: MetaConfig) -> Any:
+        pass
+
 # if a ConfigScript contains a list/dict of ConfigScripts as a parameter, wrap the list/dict in these.
 class ConfigScriptList(list):
     pass
 
 class ConfigScriptDict(dict):
     pass
-
-# implements some default functionality for loading model checkpoints with the config_script.
-@dataclass
-class ConfigScriptModel(ConfigScript):
-    checkpoint_path: Optional[str]=None
-    strict_load: bool=True
-    device: Optional[Union[torch.device, str]]=None
-
-    def meta_unroll(unroll):
-        def new_unroll(self, metaconfig):
-            if self.device is None:
-                self.device = metaconfig.device
-            if metaconfig.unrolled is None:
-                metaconfig.unrolled = {}
-            if id(self) in metaconfig.unrolled:
-                if metaconfig.verbose:
-                    print(f'fetching {self.__class__.__name__} from cache: {id(self)}')
-                return metaconfig.unrolled[id(self)]
-            if metaconfig.verbose:
-                print(f'unrolling {self.__class__.__name__}: {id(self)}')
-            model = unroll(self, metaconfig)
-            model = model.to(self.device)
-            if self.checkpoint_path is not None:
-                if metaconfig.verbose:
-                    print('loading state dict from: %s' % metaconfig.convert_path(self.checkpoint_path))
-                model.load_state_dict(torch.load(metaconfig.convert_path(self.checkpoint_path), map_location='cpu'), strict=self.strict_load)
-                if metaconfig.verbose:
-                    print('loaded.')
-            metaconfig.unrolled[id(self)] = model
-            if metaconfig.verbose:
-                print(f'unrolled and {self.__class__.__name__} cached: {id(self)}')
-            return model
-        return new_unroll
 
 # deep version of dataclasses.replace
 def deep_replace(cfg: ConfigScript, **overrides: Dict[str, Any]) -> ConfigScript:

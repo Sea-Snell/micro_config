@@ -3,6 +3,8 @@ from base_configs import AdamWConfig, LMModelConfig, TransformerConfig, WikiData
 from general_train_loop import TrainLoop
 import torch
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 # returns from unroll respect config dataclass references
 # (i.e. if train_dataset is referenced twice in a hierarchy, the object is only loaded once) 
 train_dataset = WikiDataConfig(f_path='data/wikitext-2-raw/wiki.train.raw', max_len=256)
@@ -11,6 +13,7 @@ eval_dataset = WikiDataConfig(f_path='data/wikitext-2-raw/wiki.valid.raw', max_l
 model = LMModelConfig(
             checkpoint_path=None, 
             strict_load=True, 
+            device=device, 
             dataset=train_dataset, 
             transformer_config=TransformerConfig(
                 max_length=256, 
@@ -44,10 +47,9 @@ train_config_script = TrainLoop(
 )
 
 if __name__ == "__main__":
-    # metaconfig defines parameters for the configuration process
+    # metaconfig defines parameters for the configuration process. Feel free to subclass it.
     # it could also include default parameters that you want to share broadly across objects
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    metaconfig = MetaConfig(project_root=project_root, verbose=True, device=device)
+    metaconfig = MetaConfig(project_root=project_root, verbose=True)
     # parse_args parses the command line arguments into a dictionary
     # deep_replace implements a nested version of the standard dataclasses replace method
     train_config_script = deep_replace(train_config_script, **parse_args())
