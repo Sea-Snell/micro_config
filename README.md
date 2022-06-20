@@ -137,7 +137,7 @@ if __name__ == "__main__":
     model = model_config.unroll(metaconfig)
 ```
 
-`ConfigScriptModel` (not provided with `micro_config` out of the box), as used above, is a subclass of `ConfigScript` which defines some default functionality for loading a pytorch module returned by unroll and placing it on a specified device. You can look inside `base_configs.py` (or in the [jax_v_pytorch repo](https://github.com/Sea-Snell/jax_v_pytorch/tree/main)) to see how to implement special functionality like this.
+`ConfigScriptModel` (not provided with `micro_config` out of the box), as used above, is a subclass of `ConfigScript` which defines some default functionality for loading a pytorch module returned by unroll and placing it on a specified device. You can look inside `base_configs.py` (or in the [jax_v_pytorch repo](https://github.com/Sea-Snell/jax_v_pytorch/tree/main)) to see examples of how to implement special functionality like this.
 
 ## Configs and scripts are unified: a config is to a script as a script is to a config.
 * `unroll(self, metaconfig: MetaConfig)` can not only be used to load objects, but also to define script logic.
