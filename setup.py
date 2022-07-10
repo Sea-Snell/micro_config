@@ -4,7 +4,7 @@ long_description = open('README.md').read()
 
 setup(
     name='micro_config',
-    version='0.1.2', 
+    version='0.1.3', 
     license='MIT',
     author="Charlie Snell",
     author_email='csnell22@berkeley.edu',

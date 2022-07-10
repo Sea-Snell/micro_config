@@ -77,18 +77,31 @@ def deep_replace(cfg: ConfigScript, **overrides: Dict[str, Any]) -> ConfigScript
         for k, v in overrides_.items():
             base_config_item = getattr(base_config, k)
             if isinstance(base_config_item, ConfigScript):
-                assert isinstance(v, dict)
-                inner_replace(base_config_item, **v)
+                if isinstance(v, dict):
+                    inner_replace(base_config_item, **v)
+                elif isinstance(v, ConfigScript):
+                    setattr(base_config, k, v)
+                else:
+                    raise NotImplementedError
             elif isinstance(base_config_item, ConfigScriptList):
-                assert isinstance(v, dict)
-                for i, v2 in v.items():
-                    assert isinstance(v2, dict)
-                    inner_replace(base_config_item[int(i)], **v2)
+                if isinstance(v, dict):
+                    for i, v2 in v.items():
+                        assert isinstance(v2, dict)
+                        inner_replace(base_config_item[int(i)], **v2)
+                elif isinstance(v, ConfigScriptList):
+                    setattr(base_config, k, v)
+                else:
+                    raise NotImplementedError
             elif isinstance(base_config_item, ConfigScriptDict):
                 assert isinstance(v, dict)
-                for k2, v2 in v.items():
-                    assert isinstance(v2, dict)
-                    inner_replace(base_config_item[k2], **v2)
+                if isinstance(v, dict):
+                    for k2, v2 in v.items():
+                        assert isinstance(v2, dict)
+                        inner_replace(base_config_item[k2], **v2)
+                elif isinstance(v, ConfigScriptDict):
+                    setattr(base_config, k, v)
+                else:
+                    raise NotImplementedError
             else:
                 setattr(base_config, k, v)
         return base_config
